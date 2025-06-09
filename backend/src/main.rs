@@ -9,6 +9,12 @@ mod models;
 mod services;
 mod routes;
 
+#[derive(sqlx::FromRow)]
+struct HealthCheck {
+    #[allow(dead_code)]
+    check: i32,
+}
+
 async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({
         "status": "ok",
@@ -17,7 +23,10 @@ async fn health_check() -> impl Responder {
 }
 
 async fn db_health_check(pool: web::Data<Pool<Postgres>>) -> impl Responder {
-    match sqlx::query!("SELECT 1").execute(pool.get_ref()).await {
+    match sqlx::query_scalar::<_, i32>("SELECT 1")
+        .fetch_one(pool.get_ref())
+        .await
+    {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "status": "ok",
             "message": "Database connected"

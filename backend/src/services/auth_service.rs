@@ -1,10 +1,11 @@
 use crate::models::user::{CreateUser, User, LoginUser};
 use sqlx::{Pool, Postgres};
 use anyhow::{Result, anyhow};
-use bcrypt::{hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use jsonwebtoken::{encode, decode, Header, EncodingKey, DecodingKey, Validation};
 use serde::{Serialize, Deserialize};
 use std::env;
+use uuid::Uuid;
 
 // JWT Claims struct
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,7 +16,7 @@ pub struct Claims {
 
 // Function to hash a password
 pub async fn hash_password(password: &str) -> Result<String> {
-    Ok(hash(password, 12)?)
+    Ok(hash(password, DEFAULT_COST)?)
 }
 
 // Function to verify a password
@@ -43,7 +44,7 @@ pub fn generate_token(user_id: Uuid) -> Result<String> {
     ).map_err(|e| anyhow!("Failed to generate token: {}", e))
 }
 
-// Function to validate a JWT token
+#[allow(dead_code)]
 pub fn validate_token(token: &str) -> Result<Claims> {
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     decode::<Claims>(
@@ -85,4 +86,4 @@ pub async fn login_user(pool: &Pool<Postgres>, login_user: LoginUser) -> Result<
         }
         None => Err(anyhow!("Invalid credentials")),
     }
-} 
+}
