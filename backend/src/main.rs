@@ -5,6 +5,9 @@ use std::env;
 use sqlx::{Pool, Postgres};
 
 mod config;
+mod models;
+mod services;
+mod routes;
 
 async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({
@@ -56,6 +59,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone())) // Pass database pool to the app
             .wrap(cors)
             .wrap(Logger::default())
+            .service(web::scope("/api/auth")
+                .route("/register", web::post().to(routes::auth::register_user_route))
+                .route("/login", web::post().to(routes::auth::login_user_route))
+            )
             .route("/health", web::get().to(health_check))
             .route("/db-health", web::get().to(db_health_check))
     })
